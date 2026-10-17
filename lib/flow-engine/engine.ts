@@ -18,6 +18,7 @@ import type {
   EnrollSequenceNodeData,
 } from "./types";
 import { captureEmailVariables } from "./email-capture";
+import { socialNameVariables } from "./social-name";
 import { executionType } from "./node-type";
 import { executeAiResponse } from "./nodes/ai-response";
 import { adaptMessage } from "./platform-adapter";
@@ -53,6 +54,8 @@ export async function executeFlow(
   if (activeSession) {
     return resumeSession(supabase, activeSession, context);
   }
+
+  await seedSocialName(supabase, context);
 
   // Load flow
   const { data: flow } = await supabase
@@ -130,6 +133,25 @@ export async function executeFlow(
   await traverseNodes(supabase, session.id, startNode, nodes, edges, context, 0);
 }
 
+async function seedSocialName(
+  supabase: SupabaseClient<Database, "zernflow">,
+  context: FlowExecutionContext
+) {
+  context.variables ??= {};
+  // Use the sender's social display name; never derive names from the email.
+  // A stored contact provides a fallback when a platform omits the sender name.
+  if (context.incomingMessage.text) {
+    let displayName = context.incomingMessage.sender?.name?.trim();
+    if (!displayName) {
+      const { data: contact } = await supabase.from("contacts")
+        .select("display_name").eq("id", context.contactId).single();
+      displayName = contact?.display_name ?? undefined;
+    }
+    Object.assign(context.variables, socialNameVariables(displayName));
+  }
+
+}
+
 const MAX_TRAVERSAL_DEPTH = 50;
 
 // Thrown before resumeSession advances current_node_id, so callers may retry
@@ -194,6 +216,8 @@ export async function resumeSession(
   }
 
   context.variables = (session.variables as Record<string, string>) || {};
+
+  await seedSocialName(supabase, context);
 
   // The resume is driven by a fresh reply; make {{message}} reflect it.
   if (context.incomingMessage.text) {

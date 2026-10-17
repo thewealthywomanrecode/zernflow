@@ -187,6 +187,7 @@ function HttpRequestConfig({ data, onChange }: ActionSubPanelProps) {
             <option value="POST">POST</option>
             <option value="PUT">PUT</option>
             <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
           </select>
           <input
             type="url"
