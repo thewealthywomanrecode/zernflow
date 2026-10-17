@@ -17,6 +17,7 @@ import type {
   AiResponseNodeData,
   EnrollSequenceNodeData,
 } from "./types";
+import { captureEmailVariables } from "./email-capture";
 import { executionType } from "./node-type";
 import { executeAiResponse } from "./nodes/ai-response";
 import { adaptMessage } from "./platform-adapter";
@@ -36,6 +37,7 @@ export async function executeFlow(
   // clobber a previously stored value.
   if (context.incomingMessage.text) {
     context.variables.message ??= context.incomingMessage.text;
+    Object.assign(context.variables, captureEmailVariables(context.incomingMessage.text));
   }
 
   // Check for active session waiting for input
@@ -196,6 +198,7 @@ export async function resumeSession(
   // The resume is driven by a fresh reply; make {{message}} reflect it.
   if (context.incomingMessage.text) {
     context.variables.message = context.incomingMessage.text;
+    Object.assign(context.variables, captureEmailVariables(context.incomingMessage.text));
   }
 
   // Update session

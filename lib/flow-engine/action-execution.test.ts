@@ -4,7 +4,7 @@ import { executeHttpRequest, executeFlow } from "./engine";
 import type { FlowExecutionContext } from "./types";
 import type { Database } from "@/lib/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-const context = () => ({ variables: { message: "test@example.com" }, incomingMessage: { text: "test@example.com" }, workspaceId: "ws", contactId: "contact", channelId: "channel", flowId: "flow", conversationId: "conv", triggerId: "trigger" } as FlowExecutionContext);
+const context = () => ({ variables: { message: "Hey sis, my email is test@example.com" }, incomingMessage: { text: "Hey sis, my email is test@example.com" }, workspaceId: "ws", contactId: "contact", channelId: "channel", flowId: "flow", conversationId: "conv", triggerId: "trigger" } as FlowExecutionContext);
 afterEach(() => vi.unstubAllGlobals());
 describe("exported action nodes", () => {
   it("dispatches the editor's generic action nodes", () => {
@@ -14,7 +14,7 @@ describe("exported action nodes", () => {
   });
   it("runs generic Set Field and HTTP nodes in the real traversal and persists the response", async () => {
     const writes: Array<{table:string; value:unknown}> = [];
-    const flow = {nodes:[{id:"trigger",type:"trigger",data:{}},{id:"field",type:"action",data:{actionType:"setCustomField",fieldSlug:"email",value:"{{message}}"}},{id:"http",type:"action",data:{actionType:"httpRequest",method:"POST",url:"https://api.systeme.io/api/contacts",body:'{"email":"{{message}}"}',responseVariable:"systeme_response"}}],edges:[{source:"trigger",target:"field"},{source:"field",target:"http"}]};
+    const flow = {nodes:[{id:"trigger",type:"trigger",data:{}},{id:"field",type:"action",data:{actionType:"setCustomField",fieldSlug:"email",value:"{{captured_email}}"}},{id:"http",type:"action",data:{actionType:"httpRequest",method:"POST",url:"https://api.systeme.io/api/contacts",body:'{"email":"{{captured_email}}"}',responseVariable:"systeme_response"}}],edges:[{source:"trigger",target:"field"},{source:"field",target:"http"}]};
     const db = {from(table:string) {
       let mutation=false;
       const q: Record<string, unknown> = {};
