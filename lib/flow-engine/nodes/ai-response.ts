@@ -8,7 +8,7 @@ import { generateText, createGateway } from "ai";
 // literal "{{ai_response}}" token to the contact (same pause mechanism as
 // humanTakeover, but the session is cancelled rather than completed).
 async function cancelRun(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   sessionId: string
 ): Promise<"pause"> {
   await supabase
@@ -19,7 +19,7 @@ async function cancelRun(
 }
 
 export async function executeAiResponse(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: AiResponseNodeData,
   context: FlowExecutionContext,
   sessionId: string

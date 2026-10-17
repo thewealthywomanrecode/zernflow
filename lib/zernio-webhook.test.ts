@@ -1,3 +1,4 @@
+import type { Database } from "@/lib/types/database";
 import { describe, it, expect, vi } from "vitest";
 import { createHmac } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -40,7 +41,7 @@ function makeFakeSupabase(seed: { webhook_secret?: string | null }) {
       };
     },
   };
-  return { client: client as unknown as SupabaseClient, updates };
+  return { client: client as unknown as SupabaseClient<Database, "zernflow">, updates };
 }
 
 /**

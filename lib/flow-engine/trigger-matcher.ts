@@ -8,10 +8,10 @@ interface IncomingMessage {
   sender?: { id: string };
 }
 
-type Trigger = Database["public"]["Tables"]["triggers"]["Row"];
+type Trigger = Database["zernflow"]["Tables"]["triggers"]["Row"];
 
 export async function matchTrigger(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   {
     channelId,
     workspaceId,

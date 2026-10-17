@@ -14,12 +14,12 @@ import { cn } from "@/lib/utils";
 import { PlatformIcon } from "@/components/platform-icon";
 import type { Database, Platform } from "@/lib/types/database";
 
-type Contact = Database["public"]["Tables"]["contacts"]["Row"];
-type TagRow = Database["public"]["Tables"]["tags"]["Row"];
+type Contact = Database["zernflow"]["Tables"]["contacts"]["Row"];
+type TagRow = Database["zernflow"]["Tables"]["tags"]["Row"];
 type CustomFieldDef =
-  Database["public"]["Tables"]["custom_field_definitions"]["Row"];
+  Database["zernflow"]["Tables"]["custom_field_definitions"]["Row"];
 type CustomFieldValue =
-  Database["public"]["Tables"]["contact_custom_fields"]["Row"];
+  Database["zernflow"]["Tables"]["contact_custom_fields"]["Row"];
 
 interface ContactDetails {
   contact: Contact;

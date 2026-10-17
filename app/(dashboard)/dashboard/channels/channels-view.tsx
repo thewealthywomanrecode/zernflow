@@ -24,7 +24,7 @@ import {
   type Platform,
 } from "@/lib/platforms";
 
-type Channel = Database["public"]["Tables"]["channels"]["Row"];
+type Channel = Database["zernflow"]["Tables"]["channels"]["Row"];
 
 
 function getDmLink(platform: Platform, username: string | null): { url: string | null; label: string } {

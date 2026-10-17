@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { matchCommentTrigger, type CommentForMatching } from "./comment-processor";
 import type { Database } from "@/lib/types/database";
 
-type Trigger = Database["public"]["Tables"]["triggers"]["Row"];
+type Trigger = Database["zernflow"]["Tables"]["triggers"]["Row"];
 
 function trigger(id: string, config: Record<string, unknown>): Trigger {
   return {

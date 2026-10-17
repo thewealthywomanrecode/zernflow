@@ -187,7 +187,7 @@ export async function POST(
  * If no filter, returns all subscribed contacts in the workspace.
  */
 async function resolveContacts(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   workspaceId: string,
   filter: SegmentFilter | null
 ): Promise<string[]> {
@@ -247,7 +247,7 @@ async function resolveContacts(
 }
 
 async function evaluateRule(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   workspaceId: string,
   rule: SegmentRule,
   allContactIds: Set<string>

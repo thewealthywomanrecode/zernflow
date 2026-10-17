@@ -25,7 +25,7 @@ import {
 } from "@/components/segment-builder";
 import type { Database, BroadcastStatus, Json } from "@/lib/types/database";
 
-type Broadcast = Database["public"]["Tables"]["broadcasts"]["Row"];
+type Broadcast = Database["zernflow"]["Tables"]["broadcasts"]["Row"];
 
 const statusConfig: Record<
   BroadcastStatus,

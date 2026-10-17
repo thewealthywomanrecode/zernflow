@@ -19,8 +19,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { Database, Json } from "@/lib/types/database";
 import { PLATFORM_LABELS } from "@/lib/platforms";
 
-type Channel = Database["public"]["Tables"]["channels"]["Row"];
-type CommentLog = Database["public"]["Tables"]["comment_logs"]["Row"];
+type Channel = Database["zernflow"]["Tables"]["channels"]["Row"];
+type CommentLog = Database["zernflow"]["Tables"]["comment_logs"]["Row"];
 
 interface TriggerWithFlow {
   id: string;

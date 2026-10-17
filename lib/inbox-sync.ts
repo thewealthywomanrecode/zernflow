@@ -7,6 +7,7 @@
  * per channel and imports the ones missing locally.
  */
 
+import type { Database } from "@/lib/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Zernio } from "./zernio-client";
 import { messagePreview } from "@/lib/message-preview";
@@ -52,7 +53,7 @@ export async function upsertContactForSender({
   interactionAt,
   stampExisting = true,
 }: {
-  supabase: SupabaseClient;
+  supabase: SupabaseClient<Database, "zernflow">;
   channel: { id: string; workspace_id: string };
   senderId: string;
   senderName: string;
@@ -122,7 +123,7 @@ export async function backfillInboxConversations({
   workspaceId,
   channels,
 }: {
-  supabase: SupabaseClient;
+  supabase: SupabaseClient<Database, "zernflow">;
   zernio: Zernio;
   workspaceId: string;
   channels: BackfillChannel[];
@@ -149,7 +150,7 @@ async function backfillChannel({
   workspaceId,
   channel,
 }: {
-  supabase: SupabaseClient;
+  supabase: SupabaseClient<Database, "zernflow">;
   zernio: Zernio;
   workspaceId: string;
   channel: BackfillChannel;
@@ -209,7 +210,7 @@ async function importConversation({
   channel,
   conv,
 }: {
-  supabase: SupabaseClient;
+  supabase: SupabaseClient<Database, "zernflow">;
   workspaceId: string;
   channel: BackfillChannel;
   conv: ZernioInboxConversation;
@@ -241,7 +242,7 @@ async function importConversation({
         workspace_id: workspaceId,
         channel_id: channel.id,
         contact_id: contact.contactId,
-        platform: channel.platform,
+        platform: channel.platform as Database["zernflow"]["Tables"]["channels"]["Row"]["platform"],
         late_conversation_id: conv.id,
         status: conv.status === "archived" ? "closed" : "open",
         last_message_at: conv.updatedTime ?? null,

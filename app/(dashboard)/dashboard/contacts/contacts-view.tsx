@@ -20,8 +20,8 @@ import {
 } from "@/components/segment-builder";
 import type { Database } from "@/lib/types/database";
 
-type Tag = Database["public"]["Tables"]["tags"]["Row"];
-type ContactWithTags = Database["public"]["Tables"]["contacts"]["Row"] & {
+type Tag = Database["zernflow"]["Tables"]["tags"]["Row"];
+type ContactWithTags = Database["zernflow"]["Tables"]["contacts"]["Row"] & {
   contact_tags: {
     tag_id: string;
     tags: Tag | null;

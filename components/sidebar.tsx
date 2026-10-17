@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import type { Database } from "@/lib/types/database";
 
-type Workspace = Database["public"]["Tables"]["workspaces"]["Row"];
+type Workspace = Database["zernflow"]["Tables"]["workspaces"]["Row"];
 
 interface WorkspaceItem {
   id: string;

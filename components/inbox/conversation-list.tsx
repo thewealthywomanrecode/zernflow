@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import { PlatformIcon } from "@/components/platform-icon";
 import type { Database, Platform, ConversationStatus } from "@/lib/types/database";
 
-type Conversation = Database["public"]["Tables"]["conversations"]["Row"] & {
-  contacts: Database["public"]["Tables"]["contacts"]["Row"] | null;
+type Conversation = Database["zernflow"]["Tables"]["conversations"]["Row"] & {
+  contacts: Database["zernflow"]["Tables"]["contacts"]["Row"] | null;
 };
 
 function formatTime(dateStr: string | null): string {
@@ -63,13 +63,13 @@ export function ConversationList({
         "postgres_changes",
         {
           event: "*",
-          schema: "public",
+          schema: "zernflow",
           table: "conversations",
           filter: `workspace_id=eq.${workspaceId}`,
         },
         async (payload) => {
           if (payload.eventType === "UPDATE") {
-            const updated = payload.new as Database["public"]["Tables"]["conversations"]["Row"];
+            const updated = payload.new as Database["zernflow"]["Tables"]["conversations"]["Row"];
             setConversations((prev) =>
               prev
                 .map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
@@ -80,7 +80,7 @@ export function ConversationList({
                 })
             );
           } else if (payload.eventType === "INSERT") {
-            const inserted = payload.new as Database["public"]["Tables"]["conversations"]["Row"];
+            const inserted = payload.new as Database["zernflow"]["Tables"]["conversations"]["Row"];
             // Fetch full conversation with contact
             const { data } = await supabase
               .from("conversations")

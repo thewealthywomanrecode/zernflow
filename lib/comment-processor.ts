@@ -3,8 +3,8 @@ import type { Database, Json } from "@/lib/types/database";
 import { executeFlow } from "@/lib/flow-engine/engine";
 import { createZernioClient } from "@/lib/zernio-client";
 
-type Channel = Database["public"]["Tables"]["channels"]["Row"];
-type Trigger = Database["public"]["Tables"]["triggers"]["Row"];
+type Channel = Database["zernflow"]["Tables"]["channels"]["Row"];
+type Trigger = Database["zernflow"]["Tables"]["triggers"]["Row"];
 
 export interface IncomingComment {
   id: string;
@@ -54,7 +54,7 @@ export function matchCommentTrigger(
 }
 
 export async function getActiveCommentTriggers(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   { channelId, workspaceId }: { channelId: string; workspaceId: string },
 ): Promise<Trigger[]> {
   // Null channel_id means workspace-wide, NOT global — pin to the channel's
@@ -91,7 +91,7 @@ export async function processComment({
   channel,
   comment,
 }: {
-  supabase: SupabaseClient<Database>;
+  supabase: SupabaseClient<Database, "zernflow">;
   channel: Channel;
   comment: IncomingComment;
 }): Promise<ProcessCommentResult> {
@@ -291,7 +291,7 @@ async function logComment({
   replySent = false,
   error,
 }: {
-  supabase: SupabaseClient<Database>;
+  supabase: SupabaseClient<Database, "zernflow">;
   channel: Channel;
   comment: IncomingComment;
   triggerId: string | null;

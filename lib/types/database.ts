@@ -34,6 +34,7 @@ export type FlowSessionStatus =
   | "expired"
   | "cancelled";
 export type NodeType =
+  | "action"
   | "trigger"
   | "sendMessage"
   | "condition"
@@ -65,7 +66,7 @@ export interface SequenceStep {
 }
 
 export interface Database {
-  public: {
+  zernflow: {
     Tables: {
       workspaces: {
         Row: {
@@ -73,6 +74,7 @@ export interface Database {
           name: string;
           slug: string;
           late_api_key_encrypted: string | null;
+          webhook_secret: string | null;
           ai_api_key: string | null;
           ai_provider: string;
           global_keywords: Json | null;
@@ -84,6 +86,7 @@ export interface Database {
           name: string;
           slug: string;
           late_api_key_encrypted?: string | null;
+          webhook_secret?: string | null;
           ai_api_key?: string | null;
           ai_provider?: string;
           global_keywords?: Json | null;
@@ -95,6 +98,7 @@ export interface Database {
           name?: string;
           slug?: string;
           late_api_key_encrypted?: string | null;
+          webhook_secret?: string | null;
           ai_api_key?: string | null;
           ai_provider?: string;
           global_keywords?: Json | null;
