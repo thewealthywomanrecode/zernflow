@@ -5,7 +5,7 @@ import type { Database, Json } from "@/lib/types/database";
  * Schedule a job to run at a specific time.
  */
 export async function scheduleJob(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   type: string,
   payload: Record<string, unknown>,
   runAt: Date
@@ -29,7 +29,7 @@ export async function scheduleJob(
  * with 100ms spacing to avoid rate limits.
  */
 export async function scheduleBroadcastDelivery(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   broadcastId: string,
   recipientIds: string[]
 ) {

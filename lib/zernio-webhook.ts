@@ -1,3 +1,4 @@
+import type { Database } from "@/lib/types/database";
 /**
  * Zernio webhook auto-registration.
  *
@@ -118,7 +119,7 @@ export function generateWebhookSecret(): string {
  * and to verify inbound signatures, so it must be stable per workspace.
  */
 export async function getOrCreateWorkspaceWebhookSecret(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database, "zernflow">,
   workspaceId: string,
 ): Promise<string> {
   const { data } = await supabase
@@ -164,7 +165,7 @@ export interface ChannelSecretRef {
  * during the transition. Returns null when neither is configured.
  */
 export async function resolveWebhookSecret(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database, "zernflow">,
   channel: ChannelSecretRef,
 ): Promise<string | null> {
   const { data } = await supabase

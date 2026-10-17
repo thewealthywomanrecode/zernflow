@@ -17,12 +17,13 @@ import type {
   AiResponseNodeData,
   EnrollSequenceNodeData,
 } from "./types";
+import { executionType } from "./node-type";
 import { executeAiResponse } from "./nodes/ai-response";
 import { adaptMessage } from "./platform-adapter";
 import { createZernioClient } from "@/lib/zernio-client";
 
 export async function executeFlow(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   context: FlowExecutionContext
 ) {
   // Ensure variables always exists so nodes (aiResponse, httpRequest) can write
@@ -134,8 +135,8 @@ const MAX_TRAVERSAL_DEPTH = 50;
 export class FlowLoadError extends Error {}
 
 export async function resumeSession(
-  supabase: SupabaseClient<Database>,
-  session: Database["public"]["Tables"]["flow_sessions"]["Row"],
+  supabase: SupabaseClient<Database, "zernflow">,
+  session: Database["zernflow"]["Tables"]["flow_sessions"]["Row"],
   context: FlowExecutionContext
 ) {
   const { data: flow, error: flowError } = await supabase
@@ -233,7 +234,7 @@ export async function resumeSession(
 }
 
 async function cancelUnresumableSession(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   sessionId: string,
   reason: string
 ) {
@@ -254,7 +255,7 @@ async function cancelUnresumableSession(
 }
 
 async function traverseNodes(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   sessionId: string,
   node: FlowNode,
   nodes: FlowNode[],
@@ -287,7 +288,7 @@ async function traverseNodes(
 
   // Persist variables written by output-producing nodes so they survive
   // pauses (resumeSession reloads them from the session row).
-  if (node.type === "aiResponse" || node.type === "httpRequest") {
+  if (executionType(node) === "aiResponse" || executionType(node) === "httpRequest") {
     await supabase
       .from("flow_sessions")
       .update({ variables: (context.variables ?? {}) as Json })
@@ -326,12 +327,13 @@ async function traverseNodes(
 }
 
 async function executeNode(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   node: FlowNode,
   context: FlowExecutionContext,
   sessionId: string
 ): Promise<string | void> {
-  switch (node.type) {
+  const type = executionType(node);
+  switch (type) {
     case "sendMessage":
       return executeSendMessage(supabase, node.data as SendMessageNodeData, context);
     case "condition":
@@ -340,7 +342,7 @@ async function executeNode(
       return executeDelay(supabase, node.data as DelayNodeData, sessionId, node.id, context);
     case "addTag":
     case "removeTag":
-      return executeTag(supabase, node.data as TagNodeData, context);
+      return executeTag(supabase, { ...node.data, action: type === "addTag" ? "add" : "remove" } as TagNodeData, context);
     case "setCustomField":
       return executeSetField(supabase, node.data as SetFieldNodeData, context);
     case "httpRequest":
@@ -351,7 +353,7 @@ async function executeNode(
       return executeHumanTakeover(supabase, context, sessionId);
     case "subscribe":
     case "unsubscribe":
-      return executeSubscription(supabase, node.type, context);
+      return executeSubscription(supabase, type, context);
     case "commentReply":
       return executeCommentReply(supabase, node.data as CommentReplyNodeData, context);
     case "privateReply":
@@ -375,7 +377,7 @@ async function executeNode(
 }
 
 async function sendFirstMessageAsPrivateReply(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   zernio: ReturnType<typeof createZernioClient>,
   data: SendMessageNodeData,
   context: FlowExecutionContext,
@@ -432,7 +434,7 @@ async function sendFirstMessageAsPrivateReply(
 }
 
 async function executeSendMessage(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: SendMessageNodeData,
   context: FlowExecutionContext
 ) {
@@ -578,7 +580,7 @@ async function executeSendMessage(
 }
 
 async function executeCondition(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: ConditionNodeData,
   context: FlowExecutionContext
 ): Promise<string> {
@@ -653,7 +655,7 @@ function evaluateCondition(
 }
 
 async function executeDelay(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: DelayNodeData,
   sessionId: string,
   nodeId: string,
@@ -700,7 +702,7 @@ async function executeDelay(
 }
 
 async function executeTag(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: TagNodeData,
   context: FlowExecutionContext
 ) {
@@ -731,7 +733,7 @@ async function executeTag(
 }
 
 async function executeSetField(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: SetFieldNodeData,
   context: FlowExecutionContext
 ) {
@@ -757,7 +759,7 @@ async function executeSetField(
   );
 }
 
-async function executeHttpRequest(
+export async function executeHttpRequest(
   data: HttpRequestNodeData,
   context: FlowExecutionContext
 ) {
@@ -774,9 +776,12 @@ async function executeHttpRequest(
         ...data.headers,
       },
       body: data.method !== "GET" ? body : undefined,
+      signal: AbortSignal.timeout(15000),
     });
 
     const responseData = await response.text();
+    context.variables ??= {};
+    if (data.responseVariable) context.variables[`${data.responseVariable}_status`] = String(response.status);
 
     // Store response in variable if configured
     if (data.responseVariable && context.variables) {
@@ -786,13 +791,19 @@ async function executeHttpRequest(
         context.variables[data.responseVariable] = responseData;
       }
     }
-  } catch (error) {
-    console.error("HTTP request failed:", error);
+    if (!response.ok) return "handle:error";
+  } catch {
+    context.variables ??= {};
+    if (data.responseVariable) {
+      context.variables[data.responseVariable] = "Request could not complete. Check the endpoint and server logs.";
+      context.variables[`${data.responseVariable}_status`] = "0";
+    }
+    return "handle:error";
   }
 }
 
 async function executeGoToFlow(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: GoToFlowNodeData,
   context: FlowExecutionContext,
   _sessionId: string
@@ -808,7 +819,7 @@ async function executeGoToFlow(
 }
 
 async function executeHumanTakeover(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   context: FlowExecutionContext,
   sessionId: string
 ) {
@@ -831,7 +842,7 @@ async function executeHumanTakeover(
 }
 
 async function executeSubscription(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   action: string,
   context: FlowExecutionContext
 ) {
@@ -861,7 +872,7 @@ function executeABSplit(data: ABSplitNodeData): string {
  * Uses the comment_id and post_id variables set by the comment processor.
  */
 async function executeCommentReply(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: CommentReplyNodeData,
   context: FlowExecutionContext
 ) {
@@ -914,7 +925,7 @@ async function executeCommentReply(
  * This creates a DM conversation from a comment context.
  */
 async function executePrivateReply(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: PrivateReplyNodeData,
   context: FlowExecutionContext
 ) {
@@ -981,7 +992,7 @@ async function executePrivateReply(
 }
 
 async function completeSession(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   sessionId: string
 ) {
   // Only an active session can complete: a concurrent cancel (e.g. the cron's
@@ -1014,7 +1025,7 @@ async function completeSession(
 }
 
 async function executeEnrollSequence(
-  supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database, "zernflow">,
   data: EnrollSequenceNodeData,
   context: FlowExecutionContext
 ) {

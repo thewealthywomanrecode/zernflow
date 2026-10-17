@@ -8,6 +8,8 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      db: { schema: "zernflow" },
+      cookieOptions: { name: "zernflow-auth" },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -31,6 +33,12 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  if (pathname === "/register") return NextResponse.redirect(new URL("/login", request.url));
+  if (user && (pathname.startsWith("/dashboard") || pathname.startsWith("/api/v1/"))) {
+    const { data: membership } = await supabase.from("workspace_members")
+      .select("workspace_id").eq("user_id", user.id).limit(1).maybeSingle();
+    if (!membership) return NextResponse.json({ error: "Automation access is restricted to its administrator." }, { status: 403 });
+  }
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isAuthCallback = pathname === "/auth/callback";
   const isDashboard = pathname.startsWith("/dashboard");

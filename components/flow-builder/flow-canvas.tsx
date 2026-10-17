@@ -36,7 +36,7 @@ import { NodeConfigSidebar } from "./panels/NodeConfigSidebar";
 import { VersionHistoryPanel } from "./panels/VersionHistoryPanel";
 import { TestPanel } from "./panels/TestPanel";
 
-type Flow = Database["public"]["Tables"]["flows"]["Row"];
+type Flow = Database["zernflow"]["Tables"]["flows"]["Row"];
 
 const nodeTypes: NodeTypes = {
   trigger: TriggerNode,
@@ -200,7 +200,7 @@ function FlowCanvasInner({ flow }: FlowCanvasProps) {
       }
 
       try {
-        const update: Database["public"]["Tables"]["flows"]["Update"] = {
+        const update: Database["zernflow"]["Tables"]["flows"]["Update"] = {
           name: flowName,
           nodes: nodes as unknown as Json,
           edges: edges as unknown as Json,

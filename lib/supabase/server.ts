@@ -5,10 +5,12 @@ import type { Database } from "@/lib/types/database";
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient<Database>(
+  return createServerClient<Database, "zernflow">(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      db: { schema: "zernflow" },
+      cookieOptions: { name: "zernflow-auth" },
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -28,10 +30,12 @@ export async function createClient() {
 }
 
 export async function createServiceClient() {
-  return createServerClient<Database>(
+  return createServerClient<Database, "zernflow">(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
+      db: { schema: "zernflow" },
+      cookieOptions: { name: "zernflow-auth" },
       cookies: {
         getAll() {
           return [];

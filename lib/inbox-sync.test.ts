@@ -1,3 +1,4 @@
+import type { Database } from "@/lib/types/database";
 import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Zernio } from "./zernio-client";
@@ -100,7 +101,7 @@ function makeFakeSupabase(seed: {
     },
   };
 
-  return { client: client as unknown as SupabaseClient, inserts, upserts, updates };
+  return { client: client as unknown as SupabaseClient<Database, "zernflow">, inserts, upserts, updates };
 }
 
 interface FakePage {

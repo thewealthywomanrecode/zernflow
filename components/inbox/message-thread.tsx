@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 import { PlatformIcon } from "@/components/platform-icon";
 import type { Database, ConversationStatus } from "@/lib/types/database";
 
-type Message = Database["public"]["Tables"]["messages"]["Row"];
-type Conversation = Database["public"]["Tables"]["conversations"]["Row"] & {
-  contacts: Database["public"]["Tables"]["contacts"]["Row"] | null;
+type Message = Database["zernflow"]["Tables"]["messages"]["Row"];
+type Conversation = Database["zernflow"]["Tables"]["conversations"]["Row"] & {
+  contacts: Database["zernflow"]["Tables"]["contacts"]["Row"] | null;
 };
 
 function formatMessageTime(dateStr: string): string {
@@ -174,7 +174,7 @@ export function MessageThread({
         "postgres_changes",
         {
           event: "UPDATE",
-          schema: "public",
+          schema: "zernflow",
           table: "conversations",
           filter: `id=eq.${conversation.id}`,
         },

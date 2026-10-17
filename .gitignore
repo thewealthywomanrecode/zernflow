@@ -39,3 +39,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 supabase/.temp
+# Prevent local npm cache and installer scratch output from entering commits.
+/npm-cache/

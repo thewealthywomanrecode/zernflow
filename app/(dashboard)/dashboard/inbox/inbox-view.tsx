@@ -10,10 +10,10 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/lib/types/database";
 
-type Conversation = Database["public"]["Tables"]["conversations"]["Row"] & {
-  contacts: Database["public"]["Tables"]["contacts"]["Row"] | null;
+type Conversation = Database["zernflow"]["Tables"]["conversations"]["Row"] & {
+  contacts: Database["zernflow"]["Tables"]["contacts"]["Row"] | null;
 };
-type Message = Database["public"]["Tables"]["messages"]["Row"];
+type Message = Database["zernflow"]["Tables"]["messages"]["Row"];
 
 export function InboxView({
   conversations,

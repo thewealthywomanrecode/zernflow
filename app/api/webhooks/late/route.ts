@@ -201,7 +201,7 @@ async function handleWebhook(request: NextRequest) {
 async function processMessageEvent(
   supabase: Awaited<ReturnType<typeof createServiceClient>>,
   payload: WebhookPayload,
-  channel: Database["public"]["Tables"]["channels"]["Row"],
+  channel: Database["zernflow"]["Tables"]["channels"]["Row"],
 ) {
   const { message: msg, conversation: conv, account, metadata } = payload;
 

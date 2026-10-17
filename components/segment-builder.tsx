@@ -7,9 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types/database";
 import { PLATFORMS, PLATFORM_LABELS } from "@/lib/platforms";
 
-type Tag = Database["public"]["Tables"]["tags"]["Row"];
+type Tag = Database["zernflow"]["Tables"]["tags"]["Row"];
 type CustomFieldDef =
-  Database["public"]["Tables"]["custom_field_definitions"]["Row"];
+  Database["zernflow"]["Tables"]["custom_field_definitions"]["Row"];
 
 // --- Filter types ---
 

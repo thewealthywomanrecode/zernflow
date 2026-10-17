@@ -3,7 +3,7 @@ import type { NodeType, Platform } from "@/lib/types/database";
 export interface FlowNode {
   id: string;
   type: NodeType;
-  data: NodeData;
+  data: NodeData & { actionType?: NodeType };
   position: { x: number; y: number };
 }
 
