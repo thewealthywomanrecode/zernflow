@@ -95,7 +95,7 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
-        <p className="text-center text-sm text-muted-foreground">Administrator access only. Use your existing Wealth Flow account.</p>
+        <p className="text-center text-sm text-muted-foreground">Administrator access only. Use your dedicated Zernflow email and password.</p>
       </div>
     </div>
   );
