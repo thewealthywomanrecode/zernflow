@@ -22,7 +22,7 @@ Create a separate Vercel project from this repository. Configure:
 - `CRON_SECRET`: a new random secret for this installation.
 - `NEXT_PUBLIC_APP_URL`: the deployed application's URL.
 
-The upstream cron configuration runs once per minute and requires a Vercel plan that supports this frequency. Do not activate a paid plan without the owner's approval. The existing cron configuration has not been changed to slower scheduling, because that would affect delays and sequences.
+Vercel cron schedules are disabled for the owner's Hobby deployment. Immediate webhook-driven DM flows and HTTP lead submissions do not need the scheduler. Timed delays, scheduled broadcasts, and drip sequences require an external scheduler to call /api/cron/jobs and /api/cron/sequences with the CRON_SECRET bearer token; they must not be treated as operational until that scheduler is configured and verified. Do not activate a paid Vercel plan without the owner's approval.
 
 Enter the Zernio API key through the application's Settings. Connecting a Zernio profile can change where its webhook is delivered. Only reconnect the production Instagram profile after testing the deployment and deliberately switching from the hosted service.
 
