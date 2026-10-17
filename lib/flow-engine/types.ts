@@ -94,7 +94,7 @@ export interface SetFieldNodeData {
 }
 
 export interface HttpRequestNodeData {
-  method: "GET" | "POST" | "PUT" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   url: string;
   headers?: Record<string, string>;
   body?: string;

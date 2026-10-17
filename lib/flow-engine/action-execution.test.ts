@@ -4,7 +4,7 @@ import { executeHttpRequest, executeFlow } from "./engine";
 import type { FlowExecutionContext } from "./types";
 import type { Database } from "@/lib/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-const context = () => ({ variables: { message: "Hey sis, my email is test@example.com" }, incomingMessage: { text: "Hey sis, my email is test@example.com" }, workspaceId: "ws", contactId: "contact", channelId: "channel", flowId: "flow", conversationId: "conv", triggerId: "trigger" } as FlowExecutionContext);
+const context = () => ({ variables: { message: "Hey sis, my email is test@example.com" }, incomingMessage: { text: "Hey sis, my email is test@example.com", sender: { id: "sender", name: "Sarah \"Sally\" Taylor" } }, workspaceId: "ws", contactId: "contact", channelId: "channel", flowId: "flow", conversationId: "conv", triggerId: "trigger" } as FlowExecutionContext);
 afterEach(() => vi.unstubAllGlobals());
 describe("exported action nodes", () => {
   it("dispatches the editor's generic action nodes", () => {
@@ -14,7 +14,7 @@ describe("exported action nodes", () => {
   });
   it("runs generic Set Field and HTTP nodes in the real traversal and persists the response", async () => {
     const writes: Array<{table:string; value:unknown}> = [];
-    const flow = {nodes:[{id:"trigger",type:"trigger",data:{}},{id:"field",type:"action",data:{actionType:"setCustomField",fieldSlug:"email",value:"{{captured_email}}"}},{id:"http",type:"action",data:{actionType:"httpRequest",method:"POST",url:"https://api.systeme.io/api/contacts",body:'{"email":"{{captured_email}}"}',responseVariable:"systeme_response"}}],edges:[{source:"trigger",target:"field"},{source:"field",target:"http"}]};
+    const flow = {nodes:[{id:"trigger",type:"trigger",data:{}},{id:"field",type:"action",data:{actionType:"setCustomField",fieldSlug:"email",value:"{{captured_email}}"}},{id:"http",type:"action",data:{actionType:"httpRequest",method:"POST",url:"https://api.systeme.io/api/contacts",body:'{"email":"{{captured_email}}","fields":{{social_contact_fields}}}',responseVariable:"systeme_response"}}],edges:[{source:"trigger",target:"field"},{source:"field",target:"http"}]};
     const db = {from(table:string) {
       let mutation=false;
       const q: Record<string, unknown> = {};
@@ -27,11 +27,22 @@ describe("exported action nodes", () => {
     const fetcher=vi.fn().mockResolvedValue(new Response('{"id":123}',{status:201}));vi.stubGlobal("fetch",fetcher);
     await executeFlow(db,context());
     expect(writes).toContainEqual({table:"contact_custom_fields",value:{contact_id:"contact",field_id:"email-field",value:"test@example.com"}});
-    expect(fetcher).toHaveBeenCalledWith("https://api.systeme.io/api/contacts",expect.objectContaining({method:"POST",body:'{"email":"test@example.com"}'}));
+    expect(fetcher).toHaveBeenCalledWith("https://api.systeme.io/api/contacts",expect.objectContaining({method:"POST",body:JSON.stringify({email:"test@example.com",fields:[{slug:"first_name",value:"Sarah"},{slug:"surname",value:'"Sally" Taylor'}]})}));
     expect(writes.some(w=>w.table==="flow_sessions" && JSON.stringify(w.value).includes('"systeme_response":{"id":123}'))).toBe(true);
   });
 });
 describe("HTTP request failures",()=>{
+ it("sends profile updates as merge-patch JSON before tagging",async()=>{
+  const fetcher=vi.fn().mockResolvedValue(new Response('{"id":123}',{status:200}));
+  vi.stubGlobal("fetch",fetcher);
+  const ctx=context();
+  Object.assign(ctx.variables!, {social_contact_fields:[{slug:"first_name",value:'Sarah "Sally"'},{slug:"surname",value:"Taylor"}]});
+  expect(await executeHttpRequest({method:"PATCH",url:"https://api.systeme.io/api/contacts/123",headers:{"Content-Type":"application/merge-patch+json"},body:'{"fields":{{social_contact_fields}}}',responseVariable:"profile"},ctx)).toBeUndefined();
+  const request=fetcher.mock.calls[0][1];
+  expect(request.method).toBe("PATCH");
+  expect(request.headers["Content-Type"]).toBe("application/merge-patch+json");
+  expect(JSON.parse(request.body).fields).toEqual(ctx.variables?.social_contact_fields);
+ });
  it("records a rejection and stops the success path",async()=>{
   vi.stubGlobal("fetch",vi.fn().mockResolvedValue(new Response('{"error":"Invalid API key"}',{status:401})));
   const ctx=context();expect(await executeHttpRequest({method:"POST",url:"https://api.systeme.io/api/contacts",responseVariable:"response"},ctx)).toBe("handle:error");
