@@ -427,6 +427,8 @@ async function sendFirstMessageAsPrivateReply(
       body: { accountId: lateAccountId, message: text },
     });
 
+    if (context.commentReplyDelivery) context.commentReplyDelivery.sent = true;
+
     await supabase.from("messages").insert({
       conversation_id: context.conversationId,
       direction: "outbound",
@@ -443,6 +445,16 @@ async function sendFirstMessageAsPrivateReply(
     });
   } catch (error) {
     console.error("Failed to send comment-context message as private reply:", error);
+    if (context.commentReplyDelivery) {
+      context.commentReplyDelivery.error = error instanceof Error ? error.message : "Private reply failed";
+    }
+    await supabase.from("analytics_events").insert({
+      workspace_id: context.workspaceId,
+      flow_id: context.flowId,
+      contact_id: context.contactId,
+      event_type: "message_failed",
+      metadata: { error: error instanceof Error ? error.message : "Private reply failed" },
+    });
     await supabase.from("messages").insert({
       conversation_id: context.conversationId,
       direction: "outbound",
@@ -490,6 +502,16 @@ async function executeSendMessage(
     if (!context.platform) {
       context.platform = channel.platform as FlowExecutionContext["platform"];
     }
+  }
+
+  // A new comment authorizes a private reply even when an old Messenger
+  // conversation exists and its 24-hour messaging window has expired.
+  if (context.commentReplyDelivery && context.variables?.comment_id && context.variables?.post_id) {
+    if (!context.commentReplyDelivery.attempted) {
+      context.commentReplyDelivery.attempted = true;
+      await sendFirstMessageAsPrivateReply(supabase, zernio, data, context, lateAccountId);
+    }
+    return; // Never send additional regular DMs during the comment event.
   }
 
   // Resolve late_conversation_id from conversation if not in context

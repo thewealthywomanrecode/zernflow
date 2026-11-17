@@ -165,6 +165,8 @@ export interface FlowExecutionContext {
   lateConversationId?: string;
   /** The Zernio API account ID (from channels.late_account_id) */
   lateAccountId?: string;
+  /** Present only during a fresh comment delivery, never a Messenger resume. */
+  commentReplyDelivery?: { attempted: boolean; sent: boolean; error?: string };
   incomingMessage: {
     text?: string;
     postbackPayload?: string;

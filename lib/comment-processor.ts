@@ -214,9 +214,11 @@ export async function processComment({
       .single();
 
     let dmSent = false;
+    const delivery = { attempted: false, sent: false, error: undefined as string | undefined };
     if (conversation) {
       try {
         await executeFlow(supabase, {
+          commentReplyDelivery: delivery,
           triggerId: matchedTrigger.id,
           flowId: matchedTrigger.flow_id,
           channelId: channel.id,
@@ -239,7 +241,7 @@ export async function processComment({
             post_id: comment.postId,
           },
         });
-        dmSent = true;
+        dmSent = delivery.sent;
       } catch (err) {
         console.error("Failed to execute comment flow:", err);
       }
@@ -266,6 +268,7 @@ export async function processComment({
       triggerId: matchedTrigger.id,
       dmSent,
       replySent,
+      error: delivery.error,
     });
 
     return { matched: true, triggerId: matchedTrigger.id };
