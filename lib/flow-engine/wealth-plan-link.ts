@@ -1,15 +1,5 @@
-import { extractSingleEmail } from './email-capture';
+export { WEALTH_PLAN_URL, buildWealthPlanUrl } from '../../shared/wealth-plan-url.mjs';
 import type { SendMessageNodeData } from './types';
-export const WEALTH_PLAN_URL = 'https://www.thewealthywomanrecode.com/wealth-plan/';
-export function buildWealthPlanUrl(email?: string | null, name?: string | null) {
-  const url = new URL(WEALTH_PLAN_URL);
-  const value = email?.trim() || '';
-  if (value && extractSingleEmail(value) === value) {
-    url.searchParams.set('email', value);
-    if (name?.trim()) url.searchParams.set('name', name.trim().slice(0, 100));
-  }
-  return url.toString();
-}
 function variable(path: string, variables: Record<string, unknown>): unknown {
   return path.split('.').reduce<unknown>((value, key) => value && typeof value === 'object' ? (value as Record<string, unknown>)[key] : undefined, variables);
 }
