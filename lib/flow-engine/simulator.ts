@@ -1,3 +1,5 @@
+import { resolveMessageLinks, buildWealthPlanUrl } from './wealth-plan-link';
+import type { SendMessageNodeData } from './types';
 /**
  * Client-side flow simulator. Runs a dry-run traversal of flow nodes/edges
  * without any database writes or API calls. Used for the "Test" panel in the
@@ -200,11 +202,12 @@ export function simulateFlow(
 
     switch (type) {
       case "sendMessage": {
-        const messages = (data.messages as Array<{ type?: string; text?: string; imageUrl?: string }>) || [];
+        variables.wealth_plan_url = buildWealthPlanUrl(variables.captured_email || variables.email, variables.social_first_name);
+        const messages = ((data.messages as SendMessageNodeData['messages']) || []).map(message => resolveMessageLinks(message, variables));
         const texts = messages
           .filter((m) => m.text)
           .map((m) => interpolate(m.text!, variables));
-        const buttons = (data.buttons as Array<{ title: string }>) || [];
+        const buttons = messages.flatMap(message => message.buttons || []);
         const quickReplies = (data.quickReplies as Array<{ title: string }>) || [];
         steps.push({
           nodeId: node.id,

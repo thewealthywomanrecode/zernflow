@@ -35,3 +35,20 @@ The HTTP node saves its response in the configured variable and saves status in 
 Run `npm ci`, `npm test`, `npx tsc --noEmit`, and `npm run build`. Tests use mocked HTTP requests; they do not create real Systeme.io contacts.
 
 For the real smoke test, import the owner's flows without embedding API keys in committed files. Use POST https://api.systeme.io/api/contacts with X-API-Key and a JSON body containing the captured email. Test one new address controlled by the owner, inspect the HTTP response, verify exactly one Systeme.io contact, and test a failure path before enabling the public flow. Default Reply still needs email validation and appropriate routing before handling arbitrary customer messages.
+
+## Private Wealth Plan offer
+
+The original comment offer uses `wealth flow`; its existing `wealth_plan_pending`
+internal tag, shared reply handler, Systeme.io integration, and `/wealthflow-demo`
+destination stay intact. The separate `wealth plan` comment flow sends
+`{{wealth_plan_url}}`. The engine constructs this URL from the stored Email custom
+field (or contact email) and social first name. Unknown contacts receive a plain
+`/wealth-plan/` link and can start without entering email; the website captures it
+when they advance from Page 7 to Page 8. New offer Started tagging happens only
+through the existing website lead endpoint. Button and carousel URL variables are
+resolved before platform adaptation; the private reply also includes the link in
+message text because comment-private-reply delivery supports text.
+
+`scripts/private-wealth-plan-flows.sql` applies the owner-approved flow split in
+one transaction after both applications deploy. It checks source flow versions,
+preserves the existing offer's integration nodes and refuses a second duplicate.

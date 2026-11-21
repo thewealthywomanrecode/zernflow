@@ -17,6 +17,8 @@ import type {
   AiResponseNodeData,
   EnrollSequenceNodeData,
 } from "./types";
+import { buildWealthPlanUrl, resolveMessageLinks } from './wealth-plan-link';
+import { extractSingleEmail } from './email-capture';
 import { captureEmailVariables } from "./email-capture";
 import { socialNameVariables } from "./social-name";
 import { executionType } from "./node-type";
@@ -138,17 +140,20 @@ async function seedSocialName(
   context: FlowExecutionContext
 ) {
   context.variables ??= {};
-  // Use the sender's social display name; never derive names from the email.
-  // A stored contact provides a fallback when a platform omits the sender name.
+  // Read the durable contact email independently of the current reply's
+  // captured_email, which correctly resets on every non-email message.
+  const { data: contact } = await supabase.from('contacts')
+    .select('display_name,email,contact_custom_fields(value,custom_field_definitions(slug))')
+    .eq('id', context.contactId).single();
   if (context.incomingMessage.text) {
-    let displayName = context.incomingMessage.sender?.name?.trim();
-    if (!displayName) {
-      const { data: contact } = await supabase.from("contacts")
-        .select("display_name").eq("id", context.contactId).single();
-      displayName = contact?.display_name ?? undefined;
-    }
+    const displayName = context.incomingMessage.sender?.name?.trim() || contact?.display_name;
     Object.assign(context.variables, socialNameVariables(displayName));
   }
+  const fields = contact?.contact_custom_fields as Array<{ value: string; custom_field_definitions: { slug: string } | null }> | undefined;
+  const saved = fields?.find(field => field.custom_field_definitions?.slug === 'email')?.value || contact?.email || '';
+  const captured = context.variables.captured_email;
+  const email = typeof captured === 'string' && captured && extractSingleEmail(captured) === captured ? captured : saved;
+  context.variables.wealth_plan_url = buildWealthPlanUrl(email, String(context.variables.social_first_name || ''));
 
 }
 
@@ -414,7 +419,7 @@ async function sendFirstMessageAsPrivateReply(
   if (!first) return;
 
   const text = interpolateVariables(
-    adaptMessage(first, context.platform ?? "instagram").text,
+    adaptMessage(resolveMessageLinks(first, context.variables || {}), context.platform ?? "instagram").text,
     context.variables || {}
   );
 
@@ -539,7 +544,7 @@ async function executeSendMessage(
   }
 
   for (const msg of data.messages) {
-    const adapted = adaptMessage(msg, context.platform!);
+    const adapted = adaptMessage(resolveMessageLinks(msg, context.variables || {}), context.platform!);
     const text = interpolateVariables(adapted.text, context.variables || {});
 
     try {
@@ -806,6 +811,10 @@ async function executeSetField(
     },
     { onConflict: "contact_id,field_id" }
   );
+  if (data.fieldSlug === 'email') {
+    context.variables ??= {};
+    context.variables.wealth_plan_url = buildWealthPlanUrl(value, String(context.variables.social_first_name || ''));
+  }
 }
 
 export async function executeHttpRequest(
