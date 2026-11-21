@@ -20,6 +20,9 @@ begin
   if (select count(*) from zernflow.triggers where flow_id=original.id and type='comment_keyword' and is_active)<>1 then
     raise exception 'Unexpected source trigger configuration';
   end if;
+  insert into zernflow.flow_versions(flow_id,version,nodes,edges,viewport,name)
+  select id,version,nodes,edges,viewport,name from zernflow.flows f
+  where id in (original.id,reply.id) and not exists(select 1 from zernflow.flow_versions v where v.flow_id=f.id and v.version=f.version);
   select n into strict source_trigger from jsonb_array_elements(original.nodes) n where n->>'type'='trigger';
   source_trigger := jsonb_set(source_trigger,'{data,keywords}',plan_keywords);
   source_trigger := jsonb_set(source_trigger,'{data,label}','"Wealth Plan Trigger"');
@@ -40,7 +43,7 @@ begin
       when n->>'id'='msg-email' then jsonb_set(n,'{data,messages}',(
         select jsonb_agg(jsonb_set(m,'{text}',to_jsonb(regexp_replace(m->>'text','wealth plan','Wealth Flow','gi')))) from jsonb_array_elements(n#>'{data,messages}') m))
       else n end order by ordinal) from jsonb_array_elements(original.nodes) with ordinality a(n,ordinal)
-    ),version=version+1,updated_at=now() where id=original.id;
+    ),version=version+1,published_at=now(),updated_at=now() where id=original.id;
   update zernflow.triggers set config=jsonb_set(config,'{keywords}',flow_keywords)
     where flow_id=original.id and type='comment_keyword';
   -- Only rename the old public confirmation text. Preserve its existing HTTP
@@ -49,7 +52,10 @@ begin
     select jsonb_agg(case when n->>'id'='node_1792266611424_7' then jsonb_set(n,'{data,messages}',(
       select jsonb_agg(jsonb_set(m,'{text}',to_jsonb(regexp_replace(m->>'text','wealth plan','Wealth Flow','gi')))) from jsonb_array_elements(n#>'{data,messages}') m))
       else n end order by ordinal) from jsonb_array_elements(reply.nodes) with ordinality a(n,ordinal)
-    ),version=version+1,updated_at=now() where id=reply.id;
+    ),version=version+1,published_at=now(),updated_at=now() where id=reply.id;
+  insert into zernflow.flow_versions(flow_id,version,nodes,edges,viewport,name)
+  select id,version,nodes,edges,viewport,name from zernflow.flows f
+  where id in (original.id,reply.id,new_id) and not exists(select 1 from zernflow.flow_versions v where v.flow_id=f.id and v.version=f.version);
 end;
 $migration$;
 commit;
