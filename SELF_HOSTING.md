@@ -48,9 +48,11 @@ After contact creation and name sync, the handler branches by pending tag:
 
 - Wealth Flow preserves its existing lead tag and `/wealthflow-demo` destination.
 - Wealth Plan calls the website's existing `/api/wealth-plan-lead` endpoint to
-  apply `Wealth Plan Started`, then sends `{{wealth_plan_url}}` with the
+  apply `Wealth Plan Leads`, then sends `{{wealth_plan_url}}` with the
   `BUILD MY $5K+ PLAN` button. The URL carries the captured email and available
   social first name, allowing the website to bypass its Page 7 capture gate.
+  The website adds `Wealth Plan Started` only after rendering Page 8, using
+  `milestone: "plan_loaded"` on the same endpoint. It retains the Leads tag.
 
 Each offer has independent approved message copy. Failed requests retain the
 pending tag and send a retry prompt; a delivery message requires successful
