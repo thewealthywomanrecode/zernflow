@@ -36,19 +36,33 @@ Run `npm ci`, `npm test`, `npx tsc --noEmit`, and `npm run build`. Tests use moc
 
 For the real smoke test, import the owner's flows without embedding API keys in committed files. Use POST https://api.systeme.io/api/contacts with X-API-Key and a JSON body containing the captured email. Test one new address controlled by the owner, inspect the HTTP response, verify exactly one Systeme.io contact, and test a failure path before enabling the public flow. Default Reply still needs email validation and appropriate routing before handling arbitrary customer messages.
 
-## Private Wealth Plan offer
+## Private Wealth Plan and Wealth Flow offers
 
-The original comment offer uses `wealth flow`; its existing `wealth_plan_pending`
-internal tag, shared reply handler, Systeme.io integration, and `/wealthflow-demo`
-destination stay intact. The separate `wealth plan` comment flow sends
-`{{wealth_plan_url}}`. The engine constructs this URL from the stored Email custom
-field (or contact email) and social first name. Unknown contacts receive a plain
-`/wealth-plan/` link and can start without entering email; the website captures it
-when they advance from Page 7 to Page 8. New offer Started tagging happens only
-through the existing website lead endpoint. Button and carousel URL variables are
-resolved before platform adaptation; the private reply also includes the link in
-message text because comment-private-reply delivery supports text.
+Both comment offers collect email before delivering a link. `wealth flow` marks
+`wealth_plan_pending`; `wealth plan` marks `private_wealth_plan_pending`. Each
+entry clears the other pending tag, so the most recently requested offer owns
+the next email reply. Both use the single published `Systeme.io Webhook` default
+reply handler, its email validation, stored Email field, and social-name sync.
 
-`scripts/private-wealth-plan-flows.sql` applies the owner-approved flow split in
-one transaction after both applications deploy. It checks source flow versions,
-preserves the existing offer's integration nodes and refuses a second duplicate.
+After contact creation and name sync, the handler branches by pending tag:
+
+- Wealth Flow preserves its existing lead tag and `/wealthflow-demo` destination.
+- Wealth Plan calls the website's existing `/api/wealth-plan-lead` endpoint to
+  apply `Wealth Plan Started`, then sends `{{wealth_plan_url}}` with the
+  `BUILD MY $5K+ PLAN` button. The URL carries the captured email and available
+  social first name, allowing the website to bypass its Page 7 capture gate.
+
+Each offer has independent approved message copy. Failed requests retain the
+pending tag and send a retry prompt; a delivery message requires successful
+contact creation, name sync, and offer tagging. Existing Systeme.io email
+campaigns must listen to the corresponding offer tag; saving a contact does not
+itself prove that an email campaign delivered a message.
+
+Direct website visitors still start immediately and provide first name, last
+name, and email at Page 7. URL email identification does not require a name.
+
+`scripts/private-wealth-plan-flows.sql` records the initial split.
+`scripts/offer-lead-first-flows.sql` applies the subsequent lead-first routing
+and approved copy. Both check expected versions and snapshot before/after states;
+they intentionally refuse to reapply against a changed configuration. Neither
+script contains API credentials or customer records.
